@@ -20,6 +20,7 @@ public static class RaPartyUIBuilder
     const string MaterialFolder = "Assets/UI/Materials";
     const string ControllerName = "RaPartyUI";
     const string AudioName = "AudioManager";
+    const string MenuBackgroundPath = "Assets/UI/Backgrounds/menu_background.png";
 
     enum Style { Green, Blue, Amber, Wood }
 
@@ -28,6 +29,7 @@ public static class RaPartyUIBuilder
     static Sprite green, greenPressed, blue, bluePressed, amber, amberPressed;
     static Sprite pill, corner, dot, glow, cardFrame, barFill, duckSprite;
     static Sprite iPause, iClose, iDice, iSoundOn, iSoundOff, iCrown, iUsers;
+    static Sprite menuBackground; // opcional: ilustración de fondo del menú principal
     static TMP_FontAsset font;
     static Material textMat, titleMat;
     static int uiLayer;
@@ -165,6 +167,8 @@ public static class RaPartyUIBuilder
         iSoundOn = L("icon_sound_on"); iSoundOff = L("icon_sound_off"); iCrown = L("icon_crown"); iUsers = L("icon_users");
         L("icon_settings"); L("icon_check"); L("icon_restart");
 
+        menuBackground = LoadMenuBackground();
+
         font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontPath);
         if (font == null) throw new Exception("No se encontró la fuente " + FontPath);
 
@@ -196,6 +200,25 @@ public static class RaPartyUIBuilder
         });
         uiLayer = LayerMask.NameToLayer("UI");
         if (uiLayer < 0) uiLayer = 5;
+    }
+
+    // Importa la ilustración del menú como Sprite (si existe) y la devuelve
+    static Sprite LoadMenuBackground()
+    {
+        var importer = AssetImporter.GetAtPath(MenuBackgroundPath) as TextureImporter;
+        if (importer == null) return null;
+        if (importer.textureType != TextureImporterType.Sprite || importer.mipmapEnabled || importer.maxTextureSize != 2048)
+        {
+            importer.textureType = TextureImporterType.Sprite;
+            importer.spriteImportMode = SpriteImportMode.Single;
+            importer.mipmapEnabled = false;
+            importer.alphaIsTransparency = false;
+            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.maxTextureSize = 2048;
+            importer.textureCompression = TextureImporterCompression.CompressedHQ;
+            importer.SaveAndReimport();
+        }
+        return AssetDatabase.LoadAssetAtPath<Sprite>(MenuBackgroundPath);
     }
 
     static Material EnsureMaterial(string name, Action<Material> setup)
@@ -602,7 +625,21 @@ public static class RaPartyUIBuilder
     static void BuildMainMenu(RectTransform safe, OnlineMenu menu)
     {
         var root = Stretch(Node("MenuPrincipal", safe));
-        Backdrop(root, new Color(0.06f, 0.04f, 0.02f, 0.55f));
+        if (menuBackground != null)
+        {
+            // Ilustración a pantalla completa (recorta sin deformar) que tapa la cámara AR en el menú
+            var frame = Stretch(Node("FondoIlustracion", root), -150f, -150f, -150f, -150f);
+            var art = Node("Imagen", frame);
+            Img(art, menuBackground, Color.white, false, true).preserveAspect = false;
+            var fitter = art.gameObject.AddComponent<AspectRatioFitter>();
+            fitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+            fitter.aspectRatio = menuBackground.rect.width / menuBackground.rect.height;
+            Backdrop(root, new Color(0.06f, 0.04f, 0.02f, 0.12f));
+        }
+        else
+        {
+            Backdrop(root, new Color(0.06f, 0.04f, 0.02f, 0.55f));
+        }
 
         var card = Place(Node("Tarjeta", root), Center, Center, new Vector2(0f, -10f), new Vector2(1500f, 860f));
         Img(card, panelWood, Color.white, true);

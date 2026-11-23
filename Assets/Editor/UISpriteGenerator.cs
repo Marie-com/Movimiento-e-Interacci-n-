@@ -193,6 +193,22 @@ public static class UISpriteGenerator
             for (int i = 0; i < px.Length; i++) px[i].a *= k;
         }
 
+        // Compone otra capa del mismo tamaño encima de esta
+        public void Draw(Raster layer)
+        {
+            for (int y = 0; y < H; y++)
+                for (int x = 0; x < W; x++)
+                    Blend(x, y, layer.px[y * W + x]);
+        }
+
+        // Recorta con una forma (fuera de la forma queda transparente, borde suavizado)
+        public void Mask(Sdf sdf)
+        {
+            for (int y = 0; y < H; y++)
+                for (int x = 0; x < W; x++)
+                    px[y * W + x].a *= Mathf.Clamp01(0.5f - sdf(x + 0.5f, y + 0.5f));
+        }
+
         public Texture2D ToTexture()
         {
             var tex = new Texture2D(W, H, TextureFormat.RGBA32, false);
@@ -209,7 +225,7 @@ public static class UISpriteGenerator
     // =====================================================================
     // Funciones de distancia (coordenadas en píxeles, y hacia abajo)
     // =====================================================================
-    static class Sd
+    public static class Sd
     {
         public static float Circle(float x, float y, float cx, float cy, float r)
         {
@@ -301,7 +317,7 @@ public static class UISpriteGenerator
     static Color WithA(Color c, float a) { return new Color(c.r, c.g, c.b, a); }
 
     // Vetas de madera horizontales (sutiles para que el 9-slice estire bien)
-    static Color Wood(Color baseColor, float x, float y, float strength = 0.07f, float seed = 0f)
+    public static Color Wood(Color baseColor, float x, float y, float strength = 0.07f, float seed = 0f)
     {
         float n = Mathf.PerlinNoise(x * 0.011f + seed, y * 0.085f + seed * 1.7f);
         float lines = Mathf.Sin((y + n * 22f) * 0.5f);

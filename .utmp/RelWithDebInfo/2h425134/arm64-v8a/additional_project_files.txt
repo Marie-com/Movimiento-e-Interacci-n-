@@ -1,0 +1,17 @@
+N:\TRABAJOS_U\9 Noveno\Movimiento\Proyecto\Movimiento-e-Interacci-n-\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\src\main\cpp\GameActivity\GAToUnityCallbacks.h
+N:\TRABAJOS_U\9 Noveno\Movimiento\Proyecto\Movimiento-e-Interacci-n-\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\src\main\cpp\GameActivity\MacroEnd.h
+N:\TRABAJOS_U\9 Noveno\Movimiento\Proyecto\Movimiento-e-Interacci-n-\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\src\main\cpp\GameActivity\MacroHeaderBegin.h
+N:\TRABAJOS_U\9 Noveno\Movimiento\Proyecto\Movimiento-e-Interacci-n-\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\src\main\cpp\GameActivity\MacroSourceBegin.h
+N:\TRABAJOS_U\9 Noveno\Movimiento\Proyecto\Movimiento-e-Interacci-n-\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\src\main\cpp\GameActivity\UGAApplication.h
+N:\TRABAJOS_U\9 Noveno\Movimiento\Proyecto\Movimiento-e-Interacci-n-\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\src\main\cpp\GameActivity\UGAConfiguration.h
+N:\TRABAJOS_U\9 Noveno\Movimiento\Proyecto\Movimiento-e-Interacci-n-\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\src\main\cpp\GameActivity\UGADebug.h
+N:\TRABAJOS_U\9 Noveno\Movimiento\Proyecto\Movimiento-e-Interacci-n-\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\src\main\cpp\GameActivity\UGAEvents.h
+N:\TRABAJOS_U\9 Noveno\Movimiento\Proyecto\Movimiento-e-Interacci-n-\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\src\main\cpp\GameActivity\UGAInput.h
+N:\TRABAJOS_U\9 Noveno\Movimiento\Proyecto\Movimiento-e-Interacci-n-\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\src\main\cpp\GameActivity\UGASoftKeyboard.h
+N:\TRABAJOS_U\9 Noveno\Movimiento\Proyecto\Movimiento-e-Interacci-n-\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\src\main\cpp\GameActivity\UGASoftKeyboardCallbacks.h
+N:\TRABAJOS_U\9 Noveno\Movimiento\Proyecto\Movimiento-e-Interacci-n-\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\src\main\cpp\GameActivity\UGATypes.h
+N:\TRABAJOS_U\9 Noveno\Movimiento\Proyecto\Movimiento-e-Interacci-n-\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\src\main\cpp\GameActivity\UGAVersion.h
+N:\TRABAJOS_U\9 Noveno\Movimiento\Proyecto\Movimiento-e-Interacci-n-\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\src\main\cpp\GameActivity\UnityToGACallbacks.h
+N:\TRABAJOS_U\9 Noveno\Movimiento\Proyecto\Movimiento-e-Interacci-n-\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\src\main\cpp\GameActivity\UnityToGAConfigurationCallbacks.h
+N:\TRABAJOS_U\9 Noveno\Movimiento\Proyecto\Movimiento-e-Interacci-n-\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\src\main\cpp\GameActivity\UnityToGAKeyEventCallbacks.h
+N:\TRABAJOS_U\9 Noveno\Movimiento\Proyecto\Movimiento-e-Interacci-n-\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\src\main\cpp\GameActivity\UnityToGAMotionEventCallbacks.h
