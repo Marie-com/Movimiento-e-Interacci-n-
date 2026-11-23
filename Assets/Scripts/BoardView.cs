@@ -5,7 +5,6 @@ public class BoardView : MonoBehaviour
 {
     [SerializeField] IslandBuilder builder;
     [SerializeField] GameObject piecePrefab;
-    [SerializeField] Color[] colors = { Color.red, Color.blue, Color.green, Color.yellow };
 
     Transform[] pieces;
 
@@ -16,7 +15,7 @@ public class BoardView : MonoBehaviour
         for (int i = 0; i < pieces.Length; i++)
         {
             var go = Instantiate(piecePrefab, builder.transform);
-            go.GetComponent<Renderer>().material.color = colors[i];
+            go.GetComponent<Renderer>().material.color = UIThemeConfig.PlayerColor(i); // paleta unificada
             pieces[i] = go.transform;
         }
     }
@@ -27,6 +26,7 @@ public class BoardView : MonoBehaviour
         if (gm == null) return;
         gm.PieceMoved += OnPieceMoved;
         gm.GameStarted += SyncAll;
+        gm.GameReset += SyncAll;
         SyncAll(); // al reaparecer el tablero, las fichas quedan donde deben
     }
 
@@ -36,10 +36,12 @@ public class BoardView : MonoBehaviour
         if (gm == null) return;
         gm.PieceMoved -= OnPieceMoved;
         gm.GameStarted -= SyncAll;
+        gm.GameReset -= SyncAll;
     }
 
     void SyncAll()
     {
+        StopAllCoroutines(); // corta animaciones de una partida anterior
         var gm = GameManager.Instance;
         for (int i = 0; i < pieces.Length; i++)
         {

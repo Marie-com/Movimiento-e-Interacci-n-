@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -15,10 +14,8 @@ public class MoleMinigame : MonoBehaviour, IMinigameView
     [SerializeField] TMP_Text titleText;
     [SerializeField] TMP_Text timerText;
     [SerializeField] TMP_Text countsText;
+    [SerializeField] Sprite holeSprite;    // opcional: forma de los hoyos (círculo)
 
-    static readonly string[] Names = { "Rojo", "Azul", "Verde", "Amarillo" };
-    static readonly Color[] PlayerColors =
-        { Color.red, new Color(0.2f, 0.4f, 1f), Color.green, Color.yellow };
     static readonly Color HoleColor = new Color(0.30f, 0.20f, 0.12f);
     static readonly Color MoleColor = new Color(0.95f, 0.75f, 0.45f);
 
@@ -38,8 +35,11 @@ public class MoleMinigame : MonoBehaviour, IMinigameView
             var go = new GameObject("Hoyo_" + i, typeof(RectTransform), typeof(Image), typeof(Button));
             go.transform.SetParent(grid, false);
             holeImages[i] = go.GetComponent<Image>();
+            holeImages[i].sprite = holeSprite;
             holeImages[i].color = HoleColor;
-            go.GetComponent<Button>().onClick.AddListener(() => OnHoleClicked(index));
+            var button = go.GetComponent<Button>();
+            button.transition = Selectable.Transition.None;
+            button.onClick.AddListener(() => OnHoleClicked(index));
         }
         panel.SetActive(false);
     }
@@ -47,6 +47,7 @@ public class MoleMinigame : MonoBehaviour, IMinigameView
     public void Show(int participantsMask, int seconds)
     {
         CancelInvoke();
+        StopAllCoroutines();
         mask = participantsMask;
         endTime = Time.time + seconds;
         running = true;
@@ -59,6 +60,7 @@ public class MoleMinigame : MonoBehaviour, IMinigameView
         titleText.text = canPlay ? "¡GOLPEA LOS TOPOS!" : "Mirando el minijuego...";
         UpdateCounts(0, 0, 0, 0);
         panel.SetActive(true);
+        AudioManager.PlaySfx(AudioManager.Sfx.TurnAlert);
     }
 
     public void SetMole(int hole, bool up)
@@ -70,23 +72,19 @@ public class MoleMinigame : MonoBehaviour, IMinigameView
     // Destello del «martillo» del jugador que tocó ese hueco
     public void Hammer(int player, int hole)
     {
-        StartCoroutine(Flash(player, hole));
+        if (isActiveAndEnabled) StartCoroutine(Flash(player, hole));
     }
 
     IEnumerator Flash(int player, int hole)
     {
-        holeImages[hole].color = PlayerColors[player];
+        holeImages[hole].color = UIThemeConfig.PlayerColor(player);
         yield return new WaitForSeconds(0.25f);
         holeImages[hole].color = moleUp[hole] ? MoleColor : HoleColor;
     }
 
     public void UpdateCounts(int c0, int c1, int c2, int c3)
     {
-        int[] c = { c0, c1, c2, c3 };
-        var sb = new StringBuilder();
-        for (int i = 0; i < 4; i++)
-            if ((mask & (1 << i)) != 0) sb.AppendLine(Names[i] + ": " + c[i]);
-        countsText.text = sb.ToString();
+        countsText.text = UIThemeConfig.FormatCounts(mask, c0, c1, c2, c3);
     }
 
     public void End()
@@ -94,6 +92,14 @@ public class MoleMinigame : MonoBehaviour, IMinigameView
         running = false;
         titleText.text = "¡Tiempo!";
         Invoke(nameof(Hide), 1.5f);
+    }
+
+    public void ForceClose()
+    {
+        CancelInvoke();
+        StopAllCoroutines();
+        running = false;
+        panel.SetActive(false);
     }
 
     void Hide() { panel.SetActive(false); }
@@ -107,6 +113,9 @@ public class MoleMinigame : MonoBehaviour, IMinigameView
     void OnHoleClicked(int hole)
     {
         if (running && canPlay && NetworkBridge.Instance != null)
+        {
             NetworkBridge.Instance.SendWhack(hole);
+            AudioManager.PlaySfx(AudioManager.Sfx.MinigameHit);
+        }
     }
 }

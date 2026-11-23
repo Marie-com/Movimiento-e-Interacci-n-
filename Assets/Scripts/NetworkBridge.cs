@@ -36,6 +36,11 @@ public class NetworkBridge : NetworkBehaviour
 
     public override void OnNetworkDespawn()
     {
+        // Al salir de la sala se detiene cualquier minijuego que estuviera arbitrando el anfitrión
+        StopAllCoroutines();
+        minigameOn = false;
+        hostDucks.Clear();
+
         var gm = GameManager.Instance;
         if (gm != null)
         {

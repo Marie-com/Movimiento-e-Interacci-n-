@@ -37,7 +37,15 @@ public class GameManager : MonoBehaviour
     public bool busy;
 
     public event Action GameStarted;
-    public event Action<int, int, int> PieceMoved;
+    public event Action<int, int, int> PieceMoved;            // (jugador, desde, hasta)
+
+    // Eventos para la UI
+    public event Action<int, int> TurnChanged;                 // (jugador actual, ronda)
+    public event Action<int[]> ScoresChanged;                  // puntajes actuales (solo lectura)
+    public event Action<string> InfoMessage;                   // mensaje de casilla / estado
+    public event Action<int, int, int> DuelBetRequested;       // (jugador que apuesta, rival, apuesta máxima)
+    public event Action<int[]> GameFinished;                   // copia de los puntajes finales
+    public event Action GameReset;                             // se volvió al menú principal
 
     // Ganchos para el modo online (null = modo local)
     public Func<int> LocalPlayerIndexProvider;
@@ -45,14 +53,15 @@ public class GameManager : MonoBehaviour
     public Action<int> ChallengeStartHandler;
     public Action<int, int> DuelBetHandler;
 
-    static readonly string[] Names = { "Rojo", "Azul", "Verde", "Amarillo" };
-
     // Resultados que llegan del anfitrión (o se calculan en modo local)
     bool resultReady;
     int[] challengeDeltas = new int[MaxPlayers];
     int duelWinner, duelLoser, duelAmount;
     int duelPlayer, duelRival;
     bool betConfirmed;
+
+    public bool IsOnline { get { return LocalPlayerIndexProvider != null; } }
+    public bool IsLocalTurn { get { return started && !gameOver && IsMyTurn; } }
 
     void Awake() { Instance = this; }
 
@@ -70,16 +79,40 @@ public class GameManager : MonoBehaviour
 
     public void StartGame(int players)
     {
-        activePlayers = players;
+        StopAllCoroutines();
+        betPanel.SetActive(false);
+        activePlayers = Mathf.Clamp(players, 1, MaxPlayers);
         for (int i = 0; i < MaxPlayers; i++) { positions[i] = 0; scores[i] = 0; }
         currentPlayer = 0;
         round = 1;
         gameOver = false;
         busy = false;
         resultReady = false;
+        betConfirmed = false;
         started = true;
         GameStarted?.Invoke();
+        ShowInfo("¡Empieza la partida! Comienza " + UIThemeConfig.ColoredName(currentPlayer));
         RefreshUI();
+        TurnChanged?.Invoke(currentPlayer, round);
+    }
+
+    // Vuelve al estado inicial (sin partida) para regresar al menú principal
+    public void ResetToMenu()
+    {
+        StopAllCoroutines();
+        betPanel.SetActive(false);
+        activePlayers = 0;
+        for (int i = 0; i < MaxPlayers; i++) { positions[i] = 0; scores[i] = 0; }
+        currentPlayer = 0;
+        round = 1;
+        started = false;
+        gameOver = false;
+        busy = false;
+        resultReady = false;
+        betConfirmed = false;
+        diceText.text = "";
+        RefreshUI();
+        GameReset?.Invoke();
     }
 
     bool IsLocalPlayer(int player)
@@ -105,7 +138,7 @@ public class GameManager : MonoBehaviour
         positions[player] = to;
         busy = true;
         resultReady = false;
-        ShowInfo(Names[player] + " sacó " + steps);
+        ShowInfo(UIThemeConfig.ColoredName(player) + " sacó " + steps);
         PieceMoved?.Invoke(player, from, to);
         RefreshUI();
         StartCoroutine(TurnRoutine(player, steps, to));
@@ -144,7 +177,7 @@ public class GameManager : MonoBehaviour
     // ---------- RETO (todos juegan; simulado hasta la Fase 6) ----------
     IEnumerator ChallengeRoutine(int player)
     {
-        ShowInfo("¡Reto para todos! (simulado)");
+        ShowInfo("¡Reto para todos!");
         yield return new WaitForSeconds(1f);
 
         if (ChallengeStartHandler != null) ChallengeStartHandler(player); // online: lo decide el anfitrión
@@ -157,7 +190,7 @@ public class GameManager : MonoBehaviour
         for (int i = 0; i < activePlayers; i++)
         {
             scores[i] += challengeDeltas[i];
-            sb.Append(Names[i]).Append(" +").Append(challengeDeltas[i]).Append("  ");
+            sb.Append(UIThemeConfig.ColoredName(i)).Append(" +").Append(challengeDeltas[i]).Append("  ");
         }
         ShowInfo(sb.ToString());
         RefreshUI();
@@ -191,7 +224,7 @@ public class GameManager : MonoBehaviour
         duelPlayer = player;
         duelRival = rival;
         int cap = Mathf.Min(scores[player], scores[rival]);
-        ShowInfo("¡Duelo! " + Names[player] + " vs " + Names[rival]);
+        ShowInfo("¡Duelo! " + UIThemeConfig.ColoredName(player) + " vs " + UIThemeConfig.ColoredName(rival));
         yield return new WaitForSeconds(1f);
 
         if (cap <= 0)
@@ -208,13 +241,14 @@ public class GameManager : MonoBehaviour
             betSlider.maxValue = cap;
             betSlider.value = Mathf.Min(5, cap);
             betText.text = "Apuesta: " + Mathf.RoundToInt(betSlider.value) + " pts";
+            DuelBetRequested?.Invoke(player, rival, cap);
             betPanel.SetActive(true);
             yield return new WaitUntil(() => betConfirmed);
             betPanel.SetActive(false);
         }
         else
         {
-            ShowInfo(Names[player] + " está eligiendo la apuesta...");
+            ShowInfo(UIThemeConfig.ColoredName(player) + " está eligiendo la apuesta...");
         }
 
         yield return new WaitUntil(() => resultReady);
@@ -256,7 +290,8 @@ public class GameManager : MonoBehaviour
     void AddPoints(int player, int delta)
     {
         scores[player] = Mathf.Max(0, scores[player] + delta);
-        ShowInfo(Names[player] + (delta >= 0 ? " gana " : " pierde ") + Mathf.Abs(delta) + " puntos");
+        string kind = BoardLayout.TypeAt(positions[player]) == TileType.Trampa ? "¡Trampa! " : "";
+        ShowInfo(kind + UIThemeConfig.ColoredName(player) + (delta >= 0 ? " gana " : " pierde ") + Mathf.Abs(delta) + " puntos");
         RefreshUI();
     }
 
@@ -265,7 +300,7 @@ public class GameManager : MonoBehaviour
         int real = Mathf.Min(amount, scores[loser]);
         scores[loser] -= real;
         scores[winner] += real;
-        ShowInfo(Names[winner] + " le quita " + real + " puntos a " + Names[loser]);
+        ShowInfo(UIThemeConfig.ColoredName(winner) + " le quita " + real + " puntos a " + UIThemeConfig.ColoredName(loser));
         RefreshUI();
     }
 
@@ -281,36 +316,45 @@ public class GameManager : MonoBehaviour
         currentPlayer = next;
         busy = false;
         RefreshUI();
+        TurnChanged?.Invoke(currentPlayer, round);
     }
 
     void FinishGame()
     {
+        round = MaxRounds;
         gameOver = true;
         busy = false;
         int best = -1;
         for (int i = 0; i < activePlayers; i++) best = Mathf.Max(best, scores[i]);
         string winners = "";
         for (int i = 0; i < activePlayers; i++)
-            if (scores[i] == best) winners += (winners == "" ? "" : " y ") + Names[i];
+            if (scores[i] == best) winners += (winners == "" ? "" : " y ") + UIThemeConfig.ColoredName(i);
         ShowInfo("¡Fin del juego! Gana " + winners + " con " + best + " pts");
         RefreshUI();
+        GameFinished?.Invoke((int[])scores.Clone());
     }
 
-    void ShowInfo(string message) { diceText.text = message; }
+    void ShowInfo(string message)
+    {
+        diceText.text = message;
+        InfoMessage?.Invoke(message);
+    }
 
     void RefreshUI()
     {
         if (!started)
         {
             turnText.text = "Esperando...";
+            scoreText.text = "";
             rollButton.interactable = false;
             return;
         }
 
         var sb = new StringBuilder();
         for (int i = 0; i < activePlayers; i++)
-            sb.AppendLine(Names[i] + ": " + scores[i] + " pts");
+            sb.AppendLine(UIThemeConfig.ColoredName(i) + ": " + scores[i] + " pts");
         scoreText.text = sb.ToString();
+        ScoresChanged?.Invoke(scores);
 
         if (gameOver)
         {
@@ -319,7 +363,7 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        turnText.text = "Ronda " + round + "/" + MaxRounds + " - Turno: " + Names[currentPlayer];
+        turnText.text = "Turno: " + UIThemeConfig.ColoredName(currentPlayer) + (IsOnline && IsMyTurn ? " (tú)" : "");
         rollButton.interactable = !busy && IsMyTurn;
     }
 }

@@ -1,4 +1,3 @@
-using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -12,8 +11,6 @@ public class TapMinigame : MonoBehaviour, IMinigameView
     [SerializeField] TMP_Text timerText;
     [SerializeField] TMP_Text countsText;
     [SerializeField] Button tapButton;
-
-    static readonly string[] Names = { "Rojo", "Azul", "Verde", "Amarillo" };
 
     int mask;
     float endTime;
@@ -42,15 +39,12 @@ public class TapMinigame : MonoBehaviour, IMinigameView
         titleText.text = canTap ? "¡TOCA LO MÁS RÁPIDO QUE PUEDAS!" : "Mirando el minijuego...";
         UpdateCounts(0, 0, 0, 0);
         panel.SetActive(true);
+        AudioManager.PlaySfx(AudioManager.Sfx.TurnAlert);
     }
 
     public void UpdateCounts(int c0, int c1, int c2, int c3)
     {
-        int[] c = { c0, c1, c2, c3 };
-        var sb = new StringBuilder();
-        for (int i = 0; i < 4; i++)
-            if ((mask & (1 << i)) != 0) sb.AppendLine(Names[i] + ": " + c[i]);
-        countsText.text = sb.ToString();
+        countsText.text = UIThemeConfig.FormatCounts(mask, c0, c1, c2, c3);
     }
 
     public void End()
@@ -59,6 +53,14 @@ public class TapMinigame : MonoBehaviour, IMinigameView
         tapButton.interactable = false;
         titleText.text = "¡Tiempo!";
         Invoke(nameof(Hide), 1.5f);
+    }
+
+    public void ForceClose()
+    {
+        CancelInvoke();
+        running = false;
+        tapButton.interactable = false;
+        panel.SetActive(false);
     }
 
     void Hide() { panel.SetActive(false); }
@@ -71,6 +73,8 @@ public class TapMinigame : MonoBehaviour, IMinigameView
 
     void OnTap()
     {
-        if (running && NetworkBridge.Instance != null) NetworkBridge.Instance.SendTap();
+        if (!running || NetworkBridge.Instance == null) return;
+        NetworkBridge.Instance.SendTap();
+        AudioManager.PlaySfx(AudioManager.Sfx.MinigameHit);
     }
 }

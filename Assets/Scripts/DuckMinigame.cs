@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -21,10 +20,9 @@ public class DuckMinigame : MonoBehaviour, IMinigameView
     [SerializeField] TMP_Text titleText;
     [SerializeField] TMP_Text timerText;
     [SerializeField] TMP_Text countsText;
+    [SerializeField] Sprite duckSprite;     // opcional: silueta del pato (mira a la derecha)
+    [SerializeField] Sprite shotSprite;     // opcional: marca circular del disparo
 
-    static readonly string[] Names = { "Rojo", "Azul", "Verde", "Amarillo" };
-    static readonly Color[] PlayerColors =
-        { Color.red, new Color(0.2f, 0.4f, 1f), Color.green, Color.yellow };
     static readonly Color DuckColor = new Color(0.55f, 0.35f, 0.15f);
 
     class Duck
@@ -64,6 +62,7 @@ public class DuckMinigame : MonoBehaviour, IMinigameView
         titleText.text = canPlay ? "¡DISPARA A LOS PATOS!" : "Mirando el minijuego...";
         UpdateCounts(0, 0, 0, 0);
         panel.SetActive(true);
+        AudioManager.PlaySfx(AudioManager.Sfx.TurnAlert);
     }
 
     void ClearDucks()
@@ -85,8 +84,13 @@ public class DuckMinigame : MonoBehaviour, IMinigameView
         rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.sizeDelta = new Vector2(140f, 90f);
         var img = go.GetComponent<Image>();
+        img.sprite = duckSprite;
+        img.preserveAspect = duckSprite != null;
         img.color = DuckColor;
-        go.GetComponent<Button>().onClick.AddListener(() => OnDuckClicked(id));
+        if (!toRight) rt.localScale = new Vector3(-1f, 1f, 1f); // la silueta mira hacia donde vuela
+        var button = go.GetComponent<Button>();
+        button.transition = Selectable.Transition.None;
+        button.onClick.AddListener(() => OnDuckClicked(id));
 
         var d = new Duck
         {
@@ -109,7 +113,7 @@ public class DuckMinigame : MonoBehaviour, IMinigameView
             if (ducks[i].id != id) continue;
             var d = ducks[i];
             ducks.RemoveAt(i);
-            d.img.color = PlayerColors[player];
+            d.img.color = UIThemeConfig.PlayerColor(player);
             d.rt.GetComponent<Button>().interactable = false;
             Destroy(d.rt.gameObject, 0.3f);
             return;
@@ -126,18 +130,15 @@ public class DuckMinigame : MonoBehaviour, IMinigameView
         rt.sizeDelta = new Vector2(40f, 40f);
         rt.anchoredPosition = Rect.NormalizedToPoint(field.rect, new Vector2(nx, ny));
         var img = go.GetComponent<Image>();
-        img.color = PlayerColors[player];
+        img.sprite = shotSprite;
+        img.color = UIThemeConfig.PlayerColor(player);
         img.raycastTarget = false;
         Destroy(go, 0.3f);
     }
 
     public void UpdateCounts(int c0, int c1, int c2, int c3)
     {
-        int[] c = { c0, c1, c2, c3 };
-        var sb = new StringBuilder();
-        for (int i = 0; i < 4; i++)
-            if ((mask & (1 << i)) != 0) sb.AppendLine(Names[i] + ": " + c[i]);
-        countsText.text = sb.ToString();
+        countsText.text = UIThemeConfig.FormatCounts(mask, c0, c1, c2, c3);
     }
 
     public void End()
@@ -146,6 +147,14 @@ public class DuckMinigame : MonoBehaviour, IMinigameView
         ClearDucks();
         titleText.text = "¡Tiempo!";
         Invoke(nameof(Hide), 1.5f);
+    }
+
+    public void ForceClose()
+    {
+        CancelInvoke();
+        running = false;
+        ClearDucks();
+        panel.SetActive(false);
     }
 
     void Hide() { panel.SetActive(false); }
@@ -174,7 +183,10 @@ public class DuckMinigame : MonoBehaviour, IMinigameView
     void OnDuckClicked(int id)
     {
         if (running && canPlay && NetworkBridge.Instance != null)
+        {
             NetworkBridge.Instance.SendShoot(id);
+            AudioManager.PlaySfx(AudioManager.Sfx.MinigameHit);
+        }
     }
 
     void OnFieldClicked(PointerEventData e)

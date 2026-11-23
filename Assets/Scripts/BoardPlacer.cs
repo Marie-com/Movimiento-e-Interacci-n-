@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
@@ -11,6 +13,16 @@ public class BoardPlacer : MonoBehaviour
 
     private ARTrackedImageManager imageManager;
     private GameObject board;
+    private readonly HashSet<TrackableId> trackedImages = new HashSet<TrackableId>();
+
+    // true en cuanto el tablero se instanció en el mundo (no vuelve a false)
+    public bool IsBoardPlaced { get; private set; }
+
+    // true mientras el marcador físico se está rastreando activamente
+    public bool IsImageTracked { get; private set; }
+
+    // Avisa cuando el marcador se detecta (true) o se pierde su tracking (false)
+    public event Action<bool> OnBoardTrackingChanged;
 
     void Awake()
     {
@@ -20,7 +32,11 @@ public class BoardPlacer : MonoBehaviour
     void Start()
     {
         if (probarSinRA)
+        {
             board = Instantiate(boardPrefab, new Vector3(0f, -0.15f, 0.4f), Quaternion.identity);
+            IsBoardPlaced = true;
+            SetTracked(true);
+        }
     }
 
     void OnEnable()
@@ -35,8 +51,24 @@ public class BoardPlacer : MonoBehaviour
 
     void OnImagesChanged(ARTrackablesChangedEventArgs<ARTrackedImage> args)
     {
-        foreach (var image in args.added) TryPlace(image);
-        foreach (var image in args.updated) TryPlace(image);
+        foreach (var image in args.added) { TryPlace(image); UpdateTracking(image); }
+        foreach (var image in args.updated) { TryPlace(image); UpdateTracking(image); }
+        foreach (var pair in args.removed) trackedImages.Remove(pair.Key);
+
+        if (!probarSinRA) SetTracked(trackedImages.Count > 0);
+    }
+
+    void UpdateTracking(ARTrackedImage image)
+    {
+        if (image.trackingState == TrackingState.Tracking) trackedImages.Add(image.trackableId);
+        else trackedImages.Remove(image.trackableId);
+    }
+
+    void SetTracked(bool tracked)
+    {
+        if (IsImageTracked == tracked) return;
+        IsImageTracked = tracked;
+        OnBoardTrackingChanged?.Invoke(tracked);
     }
 
     // El tablero vive en el mundo, NO pegado a la imagen.
@@ -51,6 +83,7 @@ public class BoardPlacer : MonoBehaviour
         {
             board = Instantiate(boardPrefab);
             board.transform.SetPositionAndRotation(image.transform.position, image.transform.rotation);
+            IsBoardPlaced = true;
             return;
         }
 
