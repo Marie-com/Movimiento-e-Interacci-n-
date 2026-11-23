@@ -1,0 +1,50 @@
+# Unity: carpetas generadas automáticamente (no se suben)
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+
+# Asset meta de carpetas ignoradas
+/[Aa]ssets/AssetStoreTools*
+
+# Archivos de IDE (Visual Studio / Rider / VS Code)
+.vs/
+.vscode/
+.idea/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# Metadatos de debug de Unity
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+
+# Crash reports y builds
+sysinfo.txt
+*.apk
+*.aab
+*.unitypackage
+*.app
+crashlytics-build.properties
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+Desktop.ini
